@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Science Laboratory — Booking Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:#EDF0EA; --ink:#182B20; --green:#2F7A52; --green-soft:#E1EBE3;
+    --amber:#A85C2E; --amber-soft:#F1E3D6; --pending:#8A6D1F; --pending-soft:#EFE6C8;
+    --teal:#2C6E7F; --line:#CBD3C9;
+    --font-display:'Fraunces', Georgia, serif;
+    --font-body:'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono','Courier New',monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); }
+  .wrap { max-width:960px; margin:0 auto; padding:28px 16px 60px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-icon { width:42px; height:42px; border-radius:10px; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  h1 { font-family:var(--font-display); font-size:1.5rem; margin:0; font-weight:600; }
+  .eyebrow { font-family:var(--font-mono); font-size:0.68rem; opacity:0.55; letter-spacing:0.04em; }
+  .btn { font-family:var(--font-body); font-weight:600; font-size:0.85rem; text-decoration:none; border-radius:8px; padding:10px 16px; display:inline-block; }
+  .btn-primary { background:var(--ink); color:var(--paper); }
+  .btn-primary:hover { background:var(--teal); }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:20px 0; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  .legend > span { display:flex; align-items:center; font-size:0.75rem; opacity:0.8; }
+  .swatch { width:12px; height:12px; border-radius:2px; display:inline-block; margin-right:6px; flex-shrink:0; }
+  .stats { font-family:var(--font-mono); font-size:0.68rem; opacity:0.55; margin-left:auto; }
+  table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+  th, td { border-bottom:1px solid var(--line); padding:6px; text-align:left; vertical-align:top; }
+  thead th { font-family:var(--font-display); font-size:1rem; font-weight:600; border-bottom:2px solid var(--ink); padding-bottom:10px; }
+  thead th:first-child { font-family:var(--font-mono); font-size:0.68rem; opacity:0.55; font-weight:400; }
+  .period-cell { font-family:var(--font-mono); font-size:0.74rem; white-space:nowrap; }
+  .period-sub { font-size:0.62rem; opacity:0.5; font-family:var(--font-mono); }
+  .lunch-row td { text-align:center; font-family:var(--font-mono); font-size:0.68rem; opacity:0.5; border-bottom:1px dashed var(--line); }
+  .slot { display:block; border-radius:8px; padding:8px 10px; text-decoration:none; color:inherit; }
+  .slot-open { border:1.5px dashed var(--green); color:var(--green); text-align:center; font-weight:600; font-size:0.78rem; }
+  .slot-open:hover { background:var(--green-soft); }
+  .slot-booked { background:var(--amber-soft); border-left:3px solid var(--amber); }
+  .slot-booked:hover { filter:brightness(0.96); }
+  .slot-pending { background:var(--pending-soft); border-left:3px dashed var(--pending); }
+  .slot-pending:hover { filter:brightness(0.96); }
+  .slot-teacher { font-weight:600; font-size:0.78rem; }
+  .slot-sub { font-size:0.7rem; opacity:0.75; margin-top:2px; }
+  .mobile-tabs { display:none; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px; }
+  .day-tab { border:1px solid var(--ink); background:transparent; color:var(--ink); font-family:var(--font-body); font-weight:600; font-size:0.85rem; padding:6px 14px; border-radius:999px; white-space:nowrap; cursor:pointer; flex-shrink:0; }
+  .day-tab.active { background:var(--ink); color:var(--paper); }
+  .mobile-list { display:none; flex-direction:column; }
+  .mobile-row { display:flex; align-items:center; gap:12px; padding:8px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; }
+  .mobile-time { width:64px; flex-shrink:0; }
+  .mobile-slot { flex:1; min-width:0; }
+  .footer-note { display:block; text-align:center; font-size:0.72rem; opacity:0.5; margin-top:32px; }
+  .loading { text-align:center; padding:60px 0; font-family:var(--font-mono); font-size:0.8rem; opacity:0.6; }
+  @media (max-width: 767px) {
+    table { display:none; }
+    .mobile-tabs, .mobile-list { display:flex; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EDF0EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V2"/><path d="M9 2h6"/><path d="M8 15h8"/></svg>
+      </div>
+      <div>
+        <h1>Science Laboratory</h1>
+        <div class="eyebrow">WEEKLY BOOKING BOARD</div>
+      </div>
+    </div>
+    <a class="btn btn-primary" id="requestBtn" href="#" target="_blank" rel="noopener">Request a slot</a>
+  </header>
+
+  <div class="legend">
+    <span><span class="swatch" style="border:1.5px dashed var(--green); background:transparent;"></span>Open</span>
+    <span><span class="swatch" style="background:var(--amber-soft); border-left:2px solid var(--amber);"></span>Booked</span>
+    <span><span class="swatch" style="background:var(--pending-soft); border-left:2px dashed var(--pending);"></span>Pending approval</span>
+    <span class="stats" id="stats"></span>
+  </div>
+
+  <div id="content">
+    <div class="loading">Loading schedule…</div>
+  </div>
+
+  <p class="footer-note">Requests go through GitHub Issues and appear here once approved. Refresh this page to see updates.</p>
+</div>
+
+<script>
+  // Leave repoPath blank to auto-detect from the page URL (works for the
+  // standard https://OWNER.github.io/REPO/ Pages URL). Set it manually as
+  // "owner/repo" if auto-detection doesn't match your setup.
+  const CONFIG = { repoPath: '' };
+
+  const DAYS = [
+    { key: 'Mon', full: 'Monday' },
+    { key: 'Tue', full: 'Tuesday' },
+    { key: 'Wed', full: 'Wednesday' },
+    { key: 'Thu', full: 'Thursday' },
+    { key: 'Fri', full: 'Friday' },
+  ];
+  const PERIODS = [
+    { id: '1', label: '1st', time: '7:30–8:20 AM', full: '1st (7:30–8:20 AM)' },
+    { id: '2', label: '2nd', time: '8:20–9:10 AM', full: '2nd (8:20–9:10 AM)' },
+    { id: '3', label: '3rd', time: '9:10–10:00 AM', full: '3rd (9:10–10:00 AM)' },
+    { id: '4', label: '4th', time: '10:00–10:50 AM', full: '4th (10:00–10:50 AM)' },
+    { id: '5', label: '5th', time: '10:50–11:40 AM', full: '5th (10:50–11:40 AM)' },
+    { lunch: true, time: '11:40 AM–12:30 PM' },
+    { id: '6', label: '6th', time: '12:30–1:20 PM', full: '6th (12:30–1:20 PM)' },
+    { id: '7', label: '7th', time: '1:20–2:10 PM', full: '7th (1:20–2:10 PM)' },
+    { id: '8', label: '8th', time: '2:10–3:00 PM', full: '8th (2:10–3:00 PM)' },
+    { id: '9', label: '9th', time: '3:00–3:50 PM', full: '9th (3:00–3:50 PM)' },
+  ];
+  const BOOKABLE = PERIODS.filter(function (p) { return !p.lunch; }).length * DAYS.length;
+  const DAY_MAP = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri' };
+
+  let activeDay = todayKey() || 'Mon';
+
+  function todayKey() {
+    const map = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri' };
+    return map[new Date().getDay()] || null;
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : s;
+    return d.innerHTML;
+  }
+
+  function getRepoPath() {
+    if (CONFIG.repoPath) return CONFIG.repoPath;
+    const owner = location.hostname.split('.')[0];
+    const parts = location.pathname.split('/').filter(Boolean);
+    const repo = parts[0] || '';
+    return repo ? owner + '/' + repo : owner;
+  }
+
+  function issueUrl(day, periodFull) {
+    const params = new URLSearchParams({ template: 'book-slot.yml' });
+    if (day) params.set('day', day);
+    if (periodFull) params.set('period', periodFull);
+    return 'https://github.com/' + getRepoPath() + '/issues/new?' + params.toString();
+  }
+
+  function parseIssueBody(body) {
+    const data = {};
+    const re = /### (.+?)\n\n([\s\S]*?)(?=\n### |$)/g;
+    let m;
+    while ((m = re.exec(body || ''))) {
+      let v = m[2].trim();
+      if (v === '_No response_') v = '';
+      data[m[1].trim()] = v;
+    }
+    return data;
+  }
+
+  function issueToKey(data) {
+    const day = DAY_MAP[data['Day']];
+    const pMatch = (data['Period'] || '').match(/^(\d+)/);
+    if (!day || !pMatch) return null;
+    return day + '-' + pMatch[1];
+  }
+
+  async function loadSchedule() {
+    try {
+      const res = await fetch('schedule.json', { cache: 'no-store' });
+      if (!res.ok) return {};
+      return await res.json();
+    } catch (e) { return {}; }
+  }
+
+  async function loadPending() {
+    try {
+      const res = await fetch('https://api.github.com/repos/' + getRepoPath() + '/issues?state=open&per_page=100');
+      if (!res.ok) return {};
+      const issues = await res.json();
+      const pending = {};
+      issues.forEach(function (issue) {
+        const approved = (issue.labels || []).some(function (l) { return l.name === 'approved'; });
+        if (approved) return;
+        const data = parseIssueBody(issue.body);
+        const key = issueToKey(data);
+        if (key && !pending[key]) pending[key] = { teacher: data['Teacher name'] || 'Someone', number: issue.number };
+      });
+      return pending;
+    } catch (e) { return {}; }
+  }
+
+  function slotHtml(day, period, booking, pendingEntry) {
+    const reqUrl = issueUrl(day.full, period.full);
+    if (booking) {
+      const issueLink = 'https://github.com/' + getRepoPath() + '/issues/' + booking.issue;
+      return '<a class="slot slot-booked" href="' + issueLink + '" target="_blank" rel="noopener">' +
+        '<div class="slot-teacher">' + esc(booking.teacher) + '</div>' +
+        '<div class="slot-sub">' + esc(booking.subject) + (booking.section ? ' · ' + esc(booking.section) : '') + '</div>' +
+        '</a>';
+    }
+    if (pendingEntry) {
+      const issueLink = 'https://github.com/' + getRepoPath() + '/issues/' + pendingEntry.number;
+      return '<a class="slot slot-pending" href="' + issueLink + '" target="_blank" rel="noopener">' +
+        '<div class="slot-teacher">' + esc(pendingEntry.teacher) + '</div>' +
+        '<div class="slot-sub">Pending approval</div>' +
+        '</a>';
+    }
+    return '<a class="slot slot-open" href="' + reqUrl + '" target="_blank" rel="noopener">+ Open</a>';
+  }
+
+  function buildDesktopTable(schedule, pending) {
+    let rows = '';
+    PERIODS.forEach(function (period) {
+      if (period.lunch) {
+        rows += '<tr class="lunch-row"><td colspan="6">' + period.time + ' · LUNCH BREAK</td></tr>';
+        return;
+      }
+      let row = '<tr><td class="period-cell">' + period.time + '<div class="period-sub">' + period.label + ' period</div></td>';
+      DAYS.forEach(function (day) {
+        const key = day.key + '-' + period.id;
+        row += '<td>' + slotHtml(day, period, schedule[key], pending[key]) + '</td>';
+      });
+      row += '</tr>';
+      rows += row;
+    });
+    const today = todayKey();
+    const headerCells = DAYS.map(function (d) {
+      return '<th>' + d.full + (d.key === today ? '<div class="eyebrow" style="color:var(--teal);">TODAY</div>' : '') + '</th>';
+    }).join('');
+    return '<table><thead><tr><th>PERIOD</th>' + headerCells + '</tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function buildMobile(schedule, pending) {
+    const today = todayKey();
+    const tabs = DAYS.map(function (d) {
+      return '<button class="day-tab' + (d.key === activeDay ? ' active' : '') + '" data-day="' + d.key + '">' +
+        d.key + (d.key === today ? ' •' : '') + '</button>';
+    }).join('');
+    const day = DAYS.find(function (d) { return d.key === activeDay; });
+    const list = PERIODS.map(function (period) {
+      if (period.lunch) {
+        return '<div style="text-align:center;font-family:var(--font-mono);font-size:0.68rem;opacity:0.5;padding:6px 0;">' + period.time + ' · LUNCH BREAK</div>';
+      }
+      const key = day.key + '-' + period.id;
+      return '<div class="mobile-row">' +
+        '<div class="mobile-time"><div class="period-cell">' + period.time.split('–')[0] + '</div><div class="period-sub">' + period.label + '</div></div>' +
+        '<div class="mobile-slot">' + slotHtml(day, period, schedule[key], pending[key]) + '</div>' +
+        '</div>';
+    }).join('');
+    return '<div class="mobile-tabs">' + tabs + '</div><div class="mobile-list">' + list + '</div>';
+  }
+
+  function attachMobileHandlers(schedule, pending) {
+    document.querySelectorAll('.day-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        activeDay = btn.dataset.day;
+        render(schedule, pending);
+      });
+    });
+  }
+
+  function updateStats(schedule, pending) {
+    const bookedCount = Object.keys(schedule).length;
+    const pendingCount = Object.keys(pending).filter(function (k) { return !schedule[k]; }).length;
+    const openCount = BOOKABLE - bookedCount - pendingCount;
+    document.getElementById('stats').textContent = openCount + ' OPEN · ' + pendingCount + ' PENDING · ' + bookedCount + ' BOOKED / ' + BOOKABLE;
+  }
+
+  function render(schedule, pending) {
+    document.getElementById('content').innerHTML = buildDesktopTable(schedule, pending) + buildMobile(schedule, pending);
+    attachMobileHandlers(schedule, pending);
+    updateStats(schedule, pending);
+  }
+
+  async function init() {
+    document.getElementById('requestBtn').href = issueUrl();
+    const results = await Promise.all([loadSchedule(), loadPending()]);
+    render(results[0], results[1]);
+  }
+
+  init();
+</script>
+</body>
+</html>
