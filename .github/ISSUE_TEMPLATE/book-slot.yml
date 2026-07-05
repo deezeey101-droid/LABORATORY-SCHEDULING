@@ -1,0 +1,57 @@
+name: "Book a Lab Slot"
+description: "Request a science laboratory time slot. It will not appear on the schedule until it's approved."
+title: "[Booking] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill this out to request a lab slot. Your request will show as **pending** on the board and won't be confirmed until it's approved.
+  - type: dropdown
+    id: day
+    attributes:
+      label: Day
+      options:
+        - "Monday"
+        - "Tuesday"
+        - "Wednesday"
+        - "Thursday"
+        - "Friday"
+    validations:
+      required: true
+  - type: dropdown
+    id: period
+    attributes:
+      label: Period
+      options:
+        - "1st (7:30–8:20 AM)"
+        - "2nd (8:20–9:10 AM)"
+        - "3rd (9:10–10:00 AM)"
+        - "4th (10:00–10:50 AM)"
+        - "5th (10:50–11:40 AM)"
+        - "6th (12:30–1:20 PM)"
+        - "7th (1:20–2:10 PM)"
+        - "8th (2:10–3:00 PM)"
+        - "9th (3:00–3:50 PM)"
+    validations:
+      required: true
+  - type: input
+    id: teacher
+    attributes:
+      label: "Teacher name"
+      placeholder: "e.g., Sin Datu"
+    validations:
+      required: true
+  - type: input
+    id: subject
+    attributes:
+      label: "Subject / Activity"
+      placeholder: "e.g., General Science – Mineral ID"
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: "Section (optional)"
+      placeholder: "e.g., STEM 3"
+    validations:
+      required: false
