@@ -1,0 +1,101 @@
+name: Approve lab booking
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  approve:
+    if: github.event.label.name == 'approved'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse issue and update schedule.json
+        id: update
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body || '';
+            const issueNumber = context.payload.issue.number;
+
+            function clean(v) {
+              if (!v) return '';
+              v = v.trim();
+              return v === '_No response_' ? '' : v;
+            }
+
+            const data = {};
+            const re = /### (.+?)\n\n([\s\S]*?)(?=\n### |$)/g;
+            let m;
+            while ((m = re.exec(body))) {
+              data[m[1].trim()] = clean(m[2]);
+            }
+
+            const dayMap = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri' };
+            const day = dayMap[data['Day']];
+            const periodMatch = (data['Period'] || '').match(/^(\d+)/);
+            const period = periodMatch ? periodMatch[1] : null;
+            const teacher = clean(data['Teacher name']);
+            const subject = clean(data['Subject / Activity']);
+            const section = clean(data['Section (optional)']);
+
+            async function comment(body) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body,
+              });
+            }
+
+            if (!day || !period || !teacher || !subject) {
+              await comment("⚠️ Could not read this request (missing day, period, teacher, or subject). Remove the `approved` label, fix the request, and add the label again.");
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            const key = `${day}-${period}`;
+            const schedule = JSON.parse(fs.readFileSync('schedule.json', 'utf8'));
+
+            if (schedule[key] && schedule[key].issue !== issueNumber) {
+              await comment(`⚠️ That slot (**${data['Day']}, ${data['Period']}**) is already booked by **${schedule[key].teacher}**. This request was not added. Remove the \`approved\` label, or ask the requester to pick a different slot.`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            schedule[key] = { teacher, subject, section, issue: issueNumber };
+            fs.writeFileSync('schedule.json', JSON.stringify(schedule, null, 2) + '\n');
+            core.setOutput('skip', 'false');
+
+      - name: Commit schedule.json
+        if: steps.update.outputs.skip == 'false'
+        run: |
+          git config user.name "lab-schedule-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add schedule.json
+          git commit -m "Approve booking: issue #${{ github.event.issue.number }}"
+          git push
+
+      - name: Confirm on the issue
+        if: steps.update.outputs.skip == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: "✅ Approved and added to the schedule board.",
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              state: 'closed',
+            });
